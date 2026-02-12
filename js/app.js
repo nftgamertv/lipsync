@@ -153,7 +153,7 @@ class App {
     }
 
     // Viseme tester buttons
-    for (let i = 0; i <= 4; i++) {
+    for (let i = 0; i <= 11; i++) {
       const btn = document.getElementById(`viseme-test-${i}`);
       if (btn) {
         btn.addEventListener('click', () => {
@@ -185,7 +185,7 @@ class App {
     const statusEl = document.getElementById('viseme-status');
     if (statusEl) {
       const count = this.assetManager.getLoadedVisemeCount();
-      statusEl.textContent = `${count}/5 visemes loaded`;
+      statusEl.textContent = `${count}/12 visemes loaded`;
     }
   }
 

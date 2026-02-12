@@ -37,18 +37,21 @@ function setupDOM() {
       <input type="range" id="mouth-scale-slider" min="0.1" max="3.0" step="0.05" value="1.0" />
       <textarea id="text-input"></textarea>
       <span id="status-text">Stopped</span>
-      <span id="viseme-status">0/9 visemes loaded</span>
+      <span id="viseme-status">0/12 visemes loaded</span>
       <canvas id="avatar-canvas"></canvas>
       <span id="fps-display">FPS: --</span>
-      <button id="viseme-test-0">0</button>
-      <button id="viseme-test-1">1</button>
-      <button id="viseme-test-2">2</button>
-      <button id="viseme-test-3">3</button>
-      <button id="viseme-test-4">4</button>
-      <button id="viseme-test-5">5</button>
-      <button id="viseme-test-6">6</button>
-      <button id="viseme-test-7">7</button>
-      <button id="viseme-test-8">8</button>
+      <button id="viseme-test-0">Neutral</button>
+      <button id="viseme-test-1">Aa</button>
+      <button id="viseme-test-2">D</button>
+      <button id="viseme-test-3">Ee</button>
+      <button id="viseme-test-4">F</button>
+      <button id="viseme-test-5">L</button>
+      <button id="viseme-test-6">M</button>
+      <button id="viseme-test-7">Oh</button>
+      <button id="viseme-test-8">R</button>
+      <button id="viseme-test-9">S</button>
+      <button id="viseme-test-10">Uh</button>
+      <button id="viseme-test-11">W-Oo</button>
     </div>
   `;
 }
@@ -182,8 +185,15 @@ describe('App', () => {
 
       const btn = document.getElementById('viseme-test-3');
       btn.click();
-
       expect(app.renderer.renderPreviewFrame).toHaveBeenCalledWith(3);
+    });
+
+    test('high-index viseme test buttons work', () => {
+      jest.spyOn(app.renderer, 'renderPreviewFrame');
+
+      const btn11 = document.getElementById('viseme-test-11');
+      btn11.click();
+      expect(app.renderer.renderPreviewFrame).toHaveBeenCalledWith(11);
     });
   });
 
@@ -260,7 +270,7 @@ describe('App', () => {
       app._updateVisemeStatus();
 
       const status = document.getElementById('viseme-status');
-      expect(status.textContent).toBe('2/9 visemes loaded');
+      expect(status.textContent).toBe('2/12 visemes loaded');
     });
   });
 

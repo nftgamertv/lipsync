@@ -92,16 +92,18 @@ class SyncEngine {
       this._startTransition(0, now);
     } else {
       const energy = Math.min(1, this.audioEnergy * 5);
-      if (energy > 0.7) {
-        this._startTransition(4, now); // Wide open + tongue
+      if (energy > 0.8) {
+        this._startTransition(1, now);  // Aa — wide open
+      } else if (energy > 0.6) {
+        this._startTransition(7, now);  // Oh — rounded open
       } else if (energy > 0.4) {
-        this._startTransition(3, now); // Open mouth
+        this._startTransition(10, now); // Uh — slightly open
       } else if (energy > 0.2) {
-        this._startTransition(2, now); // Teeth smile
+        this._startTransition(3, now);  // Ee — smile
       } else if (energy > 0.1) {
-        this._startTransition(1, now); // Closed consonant
+        this._startTransition(6, now);  // M — lips pressed
       } else {
-        this._startTransition(0, now); // Rest
+        this._startTransition(0, now);  // Neutral — rest
       }
     }
 

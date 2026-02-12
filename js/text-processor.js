@@ -2,12 +2,19 @@
  * TextProcessor - Converts text input to viseme sequences.
  * Uses rule-based phoneme approximation (no dictionary needed).
  *
- * Viseme Set (5 shapes):
- * 0: Rest     - Neutral/silence (simple closed line)
- * 1: Closed   - Closed consonants M, B, P (closed smile)
- * 2: Teeth    - Teeth sounds EE, S, Z, F, V, TH (teeth smile)
- * 3: Open     - Open vowels AH, OH, EH (open wavy mouth)
- * 4: Wide     - Wide open AA, loud emphasis (wide open + tongue)
+ * Viseme Set (12 shapes):
+ *  0: Neutral - Rest/silence, mouth closed
+ *  1: Aa      - Wide open "ah" (father, cat)
+ *  2: D       - Tongue on ridge (d, t, n)
+ *  3: Ee      - Wide smile (ee, ih — "see", "bit")
+ *  4: F       - Lower lip under upper teeth (f, v)
+ *  5: L       - Tongue tip up (l)
+ *  6: M       - Lips pressed (m, b, p)
+ *  7: Oh      - Rounded open (oh, aw — "boat", "saw")
+ *  8: R       - Slight pucker/open (r)
+ *  9: S       - Teeth together narrow (s, z, sh, ch)
+ * 10: Uh      - Slightly open relaxed (uh, schwa)
+ * 11: W-Oo    - Pursed/rounded (w, oo — "we", "blue")
  */
 class TextProcessor {
   constructor() {
@@ -15,39 +22,39 @@ class TextProcessor {
     this.defaultDuration = 100; // ms per phoneme
     this.minDuration = 80;
     this.maxDuration = 150;
-    this.visemeCount = 5; // Total number of viseme shapes (0-4)
+    this.visemeCount = 12; // Total number of viseme shapes (0-11)
 
     // Digraph mappings (checked first)
     this.digraphMap = {
-      'th': 2,  // teeth
-      'sh': 2,  // teeth
-      'ch': 2,  // teeth
-      'zh': 2,  // teeth
-      'ph': 2,  // teeth (like F)
-      'wh': 3,  // open
-      'oo': 3,  // open rounded
-      'ee': 2,  // teeth smile
-      'ea': 3,  // open
-      'ai': 4,  // wide open
-      'ay': 4,  // wide open
-      'oa': 3,  // open
-      'ou': 3,  // open
-      'ow': 3,  // open
-      'oi': 3,  // open
-      'au': 4   // wide open
+      'th': 2,   // D — tongue on ridge
+      'sh': 9,   // S — teeth narrow
+      'ch': 9,   // S — teeth narrow
+      'zh': 9,   // S — teeth narrow
+      'ph': 4,   // F — lip under teeth
+      'wh': 11,  // W-Oo — pursed
+      'oo': 11,  // W-Oo — pursed rounded
+      'ee': 3,   // Ee — wide smile
+      'ea': 3,   // Ee — wide smile
+      'ai': 1,   // Aa — wide open
+      'ay': 1,   // Aa — wide open
+      'oa': 7,   // Oh — rounded open
+      'ou': 7,   // Oh — rounded open
+      'ow': 7,   // Oh — rounded open
+      'oi': 7,   // Oh — rounded open
+      'au': 1    // Aa — wide open
     };
 
     // Single character mappings
     this.charMap = {
-      'a': 4, 'e': 3, 'i': 2, 'o': 3, 'u': 3,
-      'p': 1, 'b': 1, 'm': 1,
-      'f': 2, 'v': 2,
-      's': 2, 'z': 2, 'j': 2,
-      't': 2, 'd': 2, 'n': 2,
-      'l': 2, 'r': 3,
-      'k': 2, 'g': 2, 'c': 2,
-      'w': 3, 'y': 2,
-      'h': 3, 'q': 1, 'x': 2
+      'a': 1,  'e': 3,  'i': 3,  'o': 7,  'u': 10,
+      'p': 6,  'b': 6,  'm': 6,
+      'f': 4,  'v': 4,
+      's': 9,  'z': 9,  'j': 9,
+      't': 2,  'd': 2,  'n': 2,
+      'l': 5,  'r': 8,
+      'k': 2,  'g': 2,  'c': 9,
+      'w': 11, 'y': 3,
+      'h': 10, 'q': 6,  'x': 9
     };
   }
 
@@ -64,7 +71,7 @@ class TextProcessor {
   /**
    * Map a single character or digraph to a viseme ID.
    * @param {string} chars - 1-2 characters
-   * @returns {number} viseme ID (0-4)
+   * @returns {number} viseme ID (0-11)
    */
   mapToViseme(chars) {
     if (!chars || chars.length === 0) return 0;

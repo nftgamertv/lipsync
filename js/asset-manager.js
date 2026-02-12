@@ -3,14 +3,14 @@
  *
  * Supports:
  * - Base face image (PNG/JPG with alpha)
- * - Viseme mouth images (viseme0.png ... viseme4.png)
+ * - Viseme mouth images (viseme0.png ... viseme11.png)
  * - Drag-and-drop upload
  * - Click-to-position mouth overlay calibration
  */
 class AssetManager {
   constructor() {
     this.baseImage = null;
-    this.visemeImages = new Array(5).fill(null); // 5 viseme slots (0-4)
+    this.visemeImages = new Array(12).fill(null); // 12 viseme slots (0-11)
     this.mouthPosition = { x: 0.5, y: 0.7 }; // Normalized position (center default)
     this.mouthScale = 1.0;
     this.loaded = false;
@@ -38,13 +38,13 @@ class AssetManager {
 
   /**
    * Load a viseme image for a specific slot.
-   * @param {number} index - Viseme index (0-4)
+   * @param {number} index - Viseme index (0-11)
    * @param {File|string} source - File object or URL string
    * @returns {Promise<HTMLImageElement>}
    */
   async loadVisemeImage(index, source) {
-    if (index < 0 || index > 4) {
-      throw new Error(`Invalid viseme index: ${index}. Must be 0-4.`);
+    if (index < 0 || index > 11) {
+      throw new Error(`Invalid viseme index: ${index}. Must be 0-11.`);
     }
     this.visemeImages[index] = await this._loadImage(source);
     this._notifyUpdate();
@@ -53,16 +53,16 @@ class AssetManager {
 
   /**
    * Load multiple viseme images from an array of files.
-   * Files should be named viseme0.png through viseme4.png.
+   * Files should be named viseme0.png through viseme11.png.
    * @param {FileList|File[]} files
    */
   async loadVisemeFiles(files) {
     const promises = [];
     for (const file of files) {
-      const match = file.name.match(/viseme(\d)\.(?:png|jpg|jpeg|webp)/i);
+      const match = file.name.match(/viseme(\d{1,2})\.(?:png|jpg|jpeg|webp)/i);
       if (match) {
         const index = parseInt(match[1], 10);
-        if (index >= 0 && index <= 4) {
+        if (index >= 0 && index <= 11) {
           promises.push(this.loadVisemeImage(index, file));
         }
       }
@@ -107,7 +107,7 @@ class AssetManager {
    * @returns {HTMLImageElement|null}
    */
   getVisemeImage(index) {
-    if (index < 0 || index > 4) return null;
+    if (index < 0 || index > 11) return null;
     return this.visemeImages[index];
   }
 
@@ -145,7 +145,7 @@ class AssetManager {
    */
   reset() {
     this.baseImage = null;
-    this.visemeImages = new Array(5).fill(null);
+    this.visemeImages = new Array(12).fill(null);
     this.mouthPosition = { x: 0.5, y: 0.7 };
     this.mouthScale = 1.0;
     this.loaded = false;
@@ -191,10 +191,10 @@ class AssetManager {
     const imageFiles = files.filter(f => f.type.startsWith('image/'));
 
     for (const file of imageFiles) {
-      const match = file.name.match(/viseme(\d)\.(?:png|jpg|jpeg|webp)/i);
+      const match = file.name.match(/viseme(\d{1,2})\.(?:png|jpg|jpeg|webp)/i);
       if (match) {
         const index = parseInt(match[1], 10);
-        if (index >= 0 && index <= 4) {
+        if (index >= 0 && index <= 11) {
           await this.loadVisemeImage(index, file);
         }
       } else if (file.name.match(/base|face|character/i) || !this.baseImage) {

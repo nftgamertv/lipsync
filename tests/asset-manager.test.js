@@ -13,7 +13,7 @@ describe('AssetManager', () => {
   describe('constructor', () => {
     test('initializes with default values', () => {
       expect(manager.baseImage).toBeNull();
-      expect(manager.visemeImages).toHaveLength(9);
+      expect(manager.visemeImages).toHaveLength(12);
       expect(manager.visemeImages.every(v => v === null)).toBe(true);
       expect(manager.mouthPosition).toEqual({ x: 0.5, y: 0.7 });
       expect(manager.mouthScale).toBe(1.0);
@@ -102,13 +102,22 @@ describe('AssetManager', () => {
 
     test('returns null for out-of-range index', () => {
       expect(manager.getVisemeImage(-1)).toBeNull();
-      expect(manager.getVisemeImage(9)).toBeNull();
+      expect(manager.getVisemeImage(12)).toBeNull();
     });
 
     test('returns image when loaded', () => {
       const mockImg = { width: 50, height: 50 };
       manager.visemeImages[3] = mockImg;
       expect(manager.getVisemeImage(3)).toBe(mockImg);
+    });
+
+    test('returns image for high indices (10, 11)', () => {
+      const mockImg10 = { width: 50, height: 50 };
+      const mockImg11 = { width: 50, height: 50 };
+      manager.visemeImages[10] = mockImg10;
+      manager.visemeImages[11] = mockImg11;
+      expect(manager.getVisemeImage(10)).toBe(mockImg10);
+      expect(manager.getVisemeImage(11)).toBe(mockImg11);
     });
   });
 
@@ -171,15 +180,15 @@ describe('AssetManager', () => {
     test('counts loaded visemes correctly', () => {
       manager.visemeImages[0] = { width: 50 };
       manager.visemeImages[3] = { width: 50 };
-      manager.visemeImages[7] = { width: 50 };
+      manager.visemeImages[11] = { width: 50 };
       expect(manager.getLoadedVisemeCount()).toBe(3);
     });
 
-    test('returns 9 when all loaded', () => {
-      for (let i = 0; i < 9; i++) {
+    test('returns 12 when all loaded', () => {
+      for (let i = 0; i < 12; i++) {
         manager.visemeImages[i] = { width: 50 };
       }
-      expect(manager.getLoadedVisemeCount()).toBe(9);
+      expect(manager.getLoadedVisemeCount()).toBe(12);
     });
   });
 
@@ -193,6 +202,7 @@ describe('AssetManager', () => {
       manager.reset();
 
       expect(manager.baseImage).toBeNull();
+      expect(manager.visemeImages).toHaveLength(12);
       expect(manager.visemeImages.every(v => v === null)).toBe(true);
       expect(manager.mouthPosition).toEqual({ x: 0.5, y: 0.7 });
       expect(manager.mouthScale).toBe(1.0);
@@ -213,9 +223,16 @@ describe('AssetManager', () => {
         .rejects.toThrow('Invalid viseme index');
     });
 
-    test('rejects invalid index above 8', async () => {
-      await expect(manager.loadVisemeImage(9, 'test.png'))
+    test('rejects invalid index above 11', async () => {
+      await expect(manager.loadVisemeImage(12, 'test.png'))
         .rejects.toThrow('Invalid viseme index');
+    });
+
+    test('accepts valid index 11', async () => {
+      // Mock _loadImage so we don't hit jsdom's Image (which never fires events)
+      jest.spyOn(manager, '_loadImage').mockResolvedValue({ width: 50, height: 50 });
+      await manager.loadVisemeImage(11, 'test.png');
+      expect(manager.visemeImages[11]).toEqual({ width: 50, height: 50 });
     });
   });
 
@@ -242,7 +259,6 @@ describe('AssetManager', () => {
       };
       manager.setupDragAndDrop(element);
 
-      // Get the dragover handler
       const dragoverCall = element.addEventListener.mock.calls.find(c => c[0] === 'dragover');
       const handler = dragoverCall[1];
 
