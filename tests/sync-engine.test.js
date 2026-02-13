@@ -72,7 +72,7 @@ describe('SyncEngine', () => {
 
     test('limits queue size to 100', () => {
       const visemes = Array.from({ length: 120 }, (_, i) => ({
-        viseme: i % 9,
+        viseme: i % 12,
         duration: 100,
         timestamp: i * 100
       }));
@@ -140,29 +140,43 @@ describe('SyncEngine', () => {
       expect(state.nextViseme).toBe(0);
     });
 
-    test('returns wide open for high energy', () => {
-      engine.audioEnergy = 0.5;
+    test('returns Aa (wide open) for very high energy', () => {
+      engine.audioEnergy = 0.5;  // energy * 5 = 2.5, capped to 1.0 > 0.8
       engine.lastEnergyTime = 999;
       const state = engine.update(1000);
-      expect(state.nextViseme).toBe(1); // Wide open
+      expect(state.nextViseme).toBe(1); // Aa
     });
 
-    test('returns rounded for medium energy', () => {
-      engine.audioEnergy = 0.12;
+    test('returns Oh (rounded) for high energy', () => {
+      engine.audioEnergy = 0.14;  // energy * 5 = 0.7 > 0.6
       engine.lastEnergyTime = 999;
       const state = engine.update(1000);
-      expect(state.nextViseme).toBe(2); // Rounded
+      expect(state.nextViseme).toBe(7); // Oh
     });
 
-    test('returns slight open for low-medium energy', () => {
-      engine.audioEnergy = 0.05;
+    test('returns Uh for medium energy', () => {
+      engine.audioEnergy = 0.1;  // energy * 5 = 0.5 > 0.4
       engine.lastEnergyTime = 999;
       const state = engine.update(1000);
-      expect(state.nextViseme).toBe(3); // Slight open
+      expect(state.nextViseme).toBe(10); // Uh
+    });
+
+    test('returns Ee for low-medium energy', () => {
+      engine.audioEnergy = 0.05;  // energy * 5 = 0.25 > 0.2
+      engine.lastEnergyTime = 999;
+      const state = engine.update(1000);
+      expect(state.nextViseme).toBe(3); // Ee
+    });
+
+    test('returns M for low energy', () => {
+      engine.audioEnergy = 0.03;  // energy * 5 = 0.15 > 0.1
+      engine.lastEnergyTime = 999;
+      const state = engine.update(1000);
+      expect(state.nextViseme).toBe(6); // M
     });
 
     test('returns rest for very low energy', () => {
-      engine.audioEnergy = 0.01;
+      engine.audioEnergy = 0.01;  // energy * 5 = 0.05 < 0.1
       engine.lastEnergyTime = 999;
       const state = engine.update(1000);
       expect(state.nextViseme).toBe(0);
@@ -200,7 +214,7 @@ describe('SyncEngine', () => {
       engine.audioEnergy = 0.5;
       engine.lastEnergyTime = 999;
       const state = engine.update(1000);
-      expect(state.nextViseme).toBe(1); // Same as audio-only high energy
+      expect(state.nextViseme).toBe(1); // Aa — same as audio-only high energy
     });
 
     test('uses text visemes when available and audio peak detected', () => {

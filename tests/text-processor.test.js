@@ -16,23 +16,27 @@ describe('TextProcessor', () => {
       expect(processor.defaultDuration).toBe(100);
       expect(processor.minDuration).toBe(80);
       expect(processor.maxDuration).toBe(150);
+      expect(processor.visemeCount).toBe(12);
     });
 
     test('has digraph map with expected entries', () => {
-      expect(processor.digraphMap['th']).toBe(7);
-      expect(processor.digraphMap['sh']).toBe(8);
-      expect(processor.digraphMap['ch']).toBe(8);
-      expect(processor.digraphMap['ee']).toBe(3);
-      expect(processor.digraphMap['oo']).toBe(4);
+      expect(processor.digraphMap['th']).toBe(2);   // D
+      expect(processor.digraphMap['sh']).toBe(9);   // S
+      expect(processor.digraphMap['ch']).toBe(9);   // S
+      expect(processor.digraphMap['ee']).toBe(3);   // Ee
+      expect(processor.digraphMap['oo']).toBe(11);  // W-Oo
     });
 
     test('has char map with expected entries', () => {
-      expect(processor.charMap['a']).toBe(1);
-      expect(processor.charMap['e']).toBe(3);
-      expect(processor.charMap['o']).toBe(2);
-      expect(processor.charMap['p']).toBe(5);
-      expect(processor.charMap['f']).toBe(6);
-      expect(processor.charMap['s']).toBe(8);
+      expect(processor.charMap['a']).toBe(1);   // Aa
+      expect(processor.charMap['e']).toBe(3);   // Ee
+      expect(processor.charMap['o']).toBe(7);   // Oh
+      expect(processor.charMap['p']).toBe(6);   // M (lips pressed)
+      expect(processor.charMap['f']).toBe(4);   // F
+      expect(processor.charMap['s']).toBe(9);   // S
+      expect(processor.charMap['l']).toBe(5);   // L
+      expect(processor.charMap['r']).toBe(8);   // R
+      expect(processor.charMap['w']).toBe(11);  // W-Oo
     });
   });
 
@@ -76,29 +80,35 @@ describe('TextProcessor', () => {
 
   describe('mapToViseme', () => {
     test('maps vowels correctly', () => {
-      expect(processor.mapToViseme('a')).toBe(1);
-      expect(processor.mapToViseme('e')).toBe(3);
-      expect(processor.mapToViseme('i')).toBe(3);
-      expect(processor.mapToViseme('o')).toBe(2);
-      expect(processor.mapToViseme('u')).toBe(4);
+      expect(processor.mapToViseme('a')).toBe(1);   // Aa
+      expect(processor.mapToViseme('e')).toBe(3);   // Ee
+      expect(processor.mapToViseme('i')).toBe(3);   // Ee
+      expect(processor.mapToViseme('o')).toBe(7);   // Oh
+      expect(processor.mapToViseme('u')).toBe(10);  // Uh
     });
 
     test('maps consonants correctly', () => {
-      expect(processor.mapToViseme('p')).toBe(5);
-      expect(processor.mapToViseme('b')).toBe(5);
-      expect(processor.mapToViseme('m')).toBe(5);
-      expect(processor.mapToViseme('f')).toBe(6);
-      expect(processor.mapToViseme('v')).toBe(6);
-      expect(processor.mapToViseme('s')).toBe(8);
-      expect(processor.mapToViseme('z')).toBe(8);
+      expect(processor.mapToViseme('p')).toBe(6);   // M (lips pressed)
+      expect(processor.mapToViseme('b')).toBe(6);   // M
+      expect(processor.mapToViseme('m')).toBe(6);   // M
+      expect(processor.mapToViseme('f')).toBe(4);   // F
+      expect(processor.mapToViseme('v')).toBe(4);   // F
+      expect(processor.mapToViseme('s')).toBe(9);   // S
+      expect(processor.mapToViseme('z')).toBe(9);   // S
+      expect(processor.mapToViseme('l')).toBe(5);   // L
+      expect(processor.mapToViseme('r')).toBe(8);   // R
+      expect(processor.mapToViseme('t')).toBe(2);   // D
+      expect(processor.mapToViseme('d')).toBe(2);   // D
+      expect(processor.mapToViseme('n')).toBe(2);   // D
+      expect(processor.mapToViseme('w')).toBe(11);  // W-Oo
     });
 
     test('maps digraphs correctly', () => {
-      expect(processor.mapToViseme('th')).toBe(7);
-      expect(processor.mapToViseme('sh')).toBe(8);
-      expect(processor.mapToViseme('ch')).toBe(8);
-      expect(processor.mapToViseme('ee')).toBe(3);
-      expect(processor.mapToViseme('oo')).toBe(4);
+      expect(processor.mapToViseme('th')).toBe(2);   // D
+      expect(processor.mapToViseme('sh')).toBe(9);   // S
+      expect(processor.mapToViseme('ch')).toBe(9);   // S
+      expect(processor.mapToViseme('ee')).toBe(3);   // Ee
+      expect(processor.mapToViseme('oo')).toBe(11);  // W-Oo
     });
 
     test('returns 0 for empty input', () => {
@@ -110,8 +120,8 @@ describe('TextProcessor', () => {
     });
 
     test('handles uppercase', () => {
-      expect(processor.mapToViseme('A')).toBe(1);
-      expect(processor.mapToViseme('TH')).toBe(7);
+      expect(processor.mapToViseme('A')).toBe(1);   // Aa
+      expect(processor.mapToViseme('TH')).toBe(2);  // D
     });
   });
 
@@ -131,24 +141,23 @@ describe('TextProcessor', () => {
     test('processes a single word', () => {
       const result = processor.processText('cat', 1000);
       expect(result.length).toBeGreaterThan(0);
-      // 'c' -> 8, 'a' -> 1, 't' -> 8, plus rest between words
-      expect(result[0].viseme).toBe(8); // c
-      expect(result[1].viseme).toBe(1); // a
-      expect(result[2].viseme).toBe(8); // t
+      // 'c' -> 9 (S), 'a' -> 1 (Aa), 't' -> 2 (D), plus rest
+      expect(result[0].viseme).toBe(9);  // c
+      expect(result[1].viseme).toBe(1);  // a
+      expect(result[2].viseme).toBe(2);  // t
     });
 
     test('adds rest viseme between words', () => {
       const result = processor.processText('hi you', 1000);
-      // 'h' -> 1, 'i' -> 3, rest, 'y' -> 3, 'o' -> 2, 'u' -> 4, rest
       const restVisemes = result.filter(v => v.viseme === 0);
       expect(restVisemes.length).toBeGreaterThanOrEqual(2);
     });
 
     test('handles digraphs in text', () => {
       const result = processor.processText('the', 1000);
-      // 'th' -> 7 (digraph), 'e' -> 3
-      expect(result[0].viseme).toBe(7); // th
-      expect(result[1].viseme).toBe(3); // e
+      // 'th' -> 2 (D digraph), 'e' -> 3 (Ee)
+      expect(result[0].viseme).toBe(2);  // th
+      expect(result[1].viseme).toBe(3);  // e
     });
 
     test('includes timestamps', () => {
@@ -176,7 +185,7 @@ describe('TextProcessor', () => {
 
     test('processes multi-word text', () => {
       const result = processor.processText('hello world', 1000);
-      expect(result.length).toBeGreaterThan(5); // At least one viseme per character + rests
+      expect(result.length).toBeGreaterThan(5);
     });
 
     test('uses default timestamp when not provided', () => {
@@ -197,7 +206,7 @@ describe('TextProcessor', () => {
       const first = processor.peekNextViseme();
       const popped = processor.getNextViseme();
       expect(popped).toEqual(first);
-      expect(processor.getQueueLength()).toBeLessThan(3); // 'h', 'i', rest = 3 total, minus 1
+      expect(processor.getQueueLength()).toBeLessThan(3);
     });
 
     test('getNextViseme returns null when empty', () => {
