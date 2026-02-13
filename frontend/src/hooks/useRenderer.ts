@@ -54,6 +54,10 @@ export function useRenderer(options: UseRendererOptions = {}) {
     return visemeImagesRef.current.filter((img) => img !== null).length;
   }, []);
 
+  const getLoadedVisemeSlots = useCallback((): boolean[] => {
+    return visemeImagesRef.current.map((img) => img !== null);
+  }, []);
+
   const updateViseme = useCallback(
     (target: number, blend: number = 1.0, current?: number) => {
       targetVisemeRef.current = Math.max(0, Math.min(VISEME_COUNT - 1, target));
@@ -189,6 +193,7 @@ export function useRenderer(options: UseRendererOptions = {}) {
     setBaseImage,
     setVisemeImage,
     getLoadedVisemeCount,
+    getLoadedVisemeSlots,
     updateViseme,
     updateCalibration,
     startRenderLoop,

@@ -7,18 +7,17 @@ interface AssetUploaderProps {
   onBaseImageLoad: (img: HTMLImageElement) => void;
   onVisemeImageLoad: (index: number, img: HTMLImageElement) => void;
   loadedVisemeCount: number;
+  loadedVisemeSlots: boolean[];
 }
 
 export default function AssetUploader({
   onBaseImageLoad,
   onVisemeImageLoad,
   loadedVisemeCount,
+  loadedVisemeSlots,
 }: AssetUploaderProps) {
   const [baseLoaded, setBaseLoaded] = useState(false);
   const [baseName, setBaseName] = useState<string>("");
-  const [visemeStatus, setVisemeStatus] = useState<boolean[]>(
-    new Array(VISEME_COUNT).fill(false)
-  );
   const baseInputRef = useRef<HTMLInputElement>(null);
   const visemeInputRef = useRef<HTMLInputElement>(null);
 
@@ -53,8 +52,6 @@ export default function AssetUploader({
       const files = e.target.files;
       if (!files) return;
 
-      const newStatus = [...visemeStatus];
-
       for (const file of Array.from(files)) {
         // Match filenames like viseme0.png, viseme11.webp, etc.
         const match = file.name.match(/viseme(\d{1,2})\.\w+/i);
@@ -64,17 +61,14 @@ export default function AssetUploader({
             try {
               const img = await loadImage(file);
               onVisemeImageLoad(index, img);
-              newStatus[index] = true;
             } catch (err) {
               console.error(`Failed to load ${file.name}:`, err);
             }
           }
         }
       }
-
-      setVisemeStatus(newStatus);
     },
-    [loadImage, onVisemeImageLoad, visemeStatus]
+    [loadImage, onVisemeImageLoad]
   );
 
   return (
@@ -125,7 +119,7 @@ export default function AssetUploader({
             <div
               key={i}
               className={`text-[10px] px-1.5 py-0.5 rounded text-center ${
-                visemeStatus[i]
+                loadedVisemeSlots[i]
                   ? "bg-green-900/50 text-green-400"
                   : "bg-zinc-800 text-zinc-600"
               }`}

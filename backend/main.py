@@ -11,10 +11,8 @@ Endpoints:
 
 import io
 import json
-import struct
 import wave
-import time
-from typing import Optional
+from typing import Literal, Optional
 
 import numpy as np
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, UploadFile, File, Form
@@ -43,8 +41,10 @@ class TextRequest(BaseModel):
     text: str
     speed: float = 1.0
 
+VALID_MODES = Literal["hybrid", "audio_only", "text_only"]
+
 class ProcessAudioRequest(BaseModel):
-    mode: str = "hybrid"
+    mode: VALID_MODES = "hybrid"
     text: Optional[str] = None
 
 
@@ -107,6 +107,9 @@ async def process_audio_file(
     For MP3 support, the frontend should decode to WAV/PCM before sending.
     """
     content = await file.read()
+
+    if mode not in ("hybrid", "audio_only", "text_only"):
+        mode = "audio_only"
 
     # Try to read as WAV
     sample_rate, samples = _decode_audio_file(content)
@@ -196,6 +199,8 @@ async def websocket_audio(websocket: WebSocket):
                 if msg_type == "config":
                     sample_rate = msg.get("sample_rate", 44100)
                     mode = msg.get("mode", "hybrid")
+                    if mode not in ("hybrid", "audio_only", "text_only"):
+                        mode = "hybrid"
                     processor = AudioProcessor(sample_rate=sample_rate)
                     engine = SyncEngine(mode=mode)
 
