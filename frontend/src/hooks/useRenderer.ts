@@ -147,8 +147,11 @@ export function useRenderer(options: UseRendererOptions = {}) {
     }
   }, []);
 
+  const isRunningRef = useRef(false);
+
   const startRenderLoop = useCallback(() => {
-    if (isRunning) return;
+    if (isRunningRef.current) return;
+    isRunningRef.current = true;
     setIsRunning(true);
     lastFpsUpdateRef.current = performance.now();
     frameCountRef.current = 0;
@@ -158,13 +161,14 @@ export function useRenderer(options: UseRendererOptions = {}) {
       animFrameRef.current = requestAnimationFrame(loop);
     };
     animFrameRef.current = requestAnimationFrame(loop);
-  }, [isRunning, render]);
+  }, [render]);
 
   const stopRenderLoop = useCallback(() => {
     if (animFrameRef.current) {
       cancelAnimationFrame(animFrameRef.current);
       animFrameRef.current = 0;
     }
+    isRunningRef.current = false;
     setIsRunning(false);
   }, []);
 

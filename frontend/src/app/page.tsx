@@ -70,19 +70,25 @@ export default function Home() {
     renderer.updateCalibration(calibration);
   }, [calibration, renderer]);
 
-  // Start/Stop
+  // Always run the render loop so canvas is live (tester, calibration, etc.)
+  useEffect(() => {
+    renderer.startRenderLoop();
+    return () => {
+      renderer.stopRenderLoop();
+    };
+  }, [renderer]);
+
+  // Start/Stop controls audio + WebSocket only, NOT the render loop
   const handleToggle = useCallback(() => {
     if (isActive) {
       // Stop
       audio.stopCapture();
       ws.sendReset();
       ws.disconnect();
-      renderer.stopRenderLoop();
       setIsActive(false);
     } else {
       // Start
       ws.connect();
-      renderer.startRenderLoop();
       setIsActive(true);
 
       // Configure after connection established
@@ -90,7 +96,7 @@ export default function Home() {
         ws.sendConfig(audio.sampleRate, mode, textRef.current);
       }, 500);
     }
-  }, [isActive, audio, ws, renderer, mode]);
+  }, [isActive, audio, ws, mode]);
 
   // Handle mode change
   const handleModeChange = useCallback(
