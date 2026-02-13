@@ -79,7 +79,7 @@ export default function Home() {
   }, [renderer]);
 
   // Start/Stop controls audio + WebSocket only, NOT the render loop
-  const handleToggle = useCallback(() => {
+  const handleToggle = useCallback(async () => {
     if (isActive) {
       // Stop
       audio.stopCapture();
@@ -87,14 +87,21 @@ export default function Home() {
       ws.disconnect();
       setIsActive(false);
     } else {
-      // Start
-      ws.connect();
-      setIsActive(true);
-
-      // Configure after connection established
-      setTimeout(() => {
+      // Start: connect WebSocket, send config, then start audio if not already capturing
+      try {
+        await ws.connect();
         ws.sendConfig(audio.sampleRate, mode, textRef.current);
-      }, 500);
+        setIsActive(true);
+
+        // Auto-start microphone if not already capturing audio
+        if (!audio.isCapturing) {
+          audio.startMicrophone().catch((err: unknown) => {
+            console.warn("Auto-start mic failed (user can start manually):", err);
+          });
+        }
+      } catch {
+        console.error("Failed to connect WebSocket");
+      }
     }
   }, [isActive, audio, ws, mode]);
 
@@ -258,6 +265,7 @@ export default function Home() {
             onBaseImageLoad={renderer.setBaseImage}
             onVisemeImageLoad={renderer.setVisemeImage}
             loadedVisemeCount={renderer.getLoadedVisemeCount()}
+            loadedVisemeSlots={renderer.getLoadedVisemeSlots()}
           />
 
           <hr className="border-zinc-800" />

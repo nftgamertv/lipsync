@@ -10,6 +10,7 @@ describe("AssetUploader component", () => {
         onBaseImageLoad={jest.fn()}
         onVisemeImageLoad={jest.fn()}
         loadedVisemeCount={0}
+        loadedVisemeSlots={new Array(12).fill(false)}
       />
     );
     expect(screen.getByText("Character Assets")).toBeInTheDocument();
@@ -21,6 +22,7 @@ describe("AssetUploader component", () => {
         onBaseImageLoad={jest.fn()}
         onVisemeImageLoad={jest.fn()}
         loadedVisemeCount={0}
+        loadedVisemeSlots={new Array(12).fill(false)}
       />
     );
     expect(screen.getByText("Base Face Image")).toBeInTheDocument();
@@ -32,6 +34,7 @@ describe("AssetUploader component", () => {
         onBaseImageLoad={jest.fn()}
         onVisemeImageLoad={jest.fn()}
         loadedVisemeCount={0}
+        loadedVisemeSlots={new Array(12).fill(false)}
       />
     );
     expect(screen.getByText("Viseme Mouth Images")).toBeInTheDocument();
@@ -43,6 +46,7 @@ describe("AssetUploader component", () => {
         onBaseImageLoad={jest.fn()}
         onVisemeImageLoad={jest.fn()}
         loadedVisemeCount={5}
+        loadedVisemeSlots={new Array(12).fill(false)}
       />
     );
     expect(screen.getByText("5/12 visemes loaded")).toBeInTheDocument();
@@ -54,6 +58,7 @@ describe("AssetUploader component", () => {
         onBaseImageLoad={jest.fn()}
         onVisemeImageLoad={jest.fn()}
         loadedVisemeCount={0}
+        loadedVisemeSlots={new Array(12).fill(false)}
       />
     );
     expect(screen.getByText("0/12 visemes loaded")).toBeInTheDocument();
@@ -65,6 +70,7 @@ describe("AssetUploader component", () => {
         onBaseImageLoad={jest.fn()}
         onVisemeImageLoad={jest.fn()}
         loadedVisemeCount={0}
+        loadedVisemeSlots={new Array(12).fill(false)}
       />
     );
 
@@ -79,6 +85,7 @@ describe("AssetUploader component", () => {
         onBaseImageLoad={jest.fn()}
         onVisemeImageLoad={jest.fn()}
         loadedVisemeCount={0}
+        loadedVisemeSlots={new Array(12).fill(false)}
       />
     );
 
@@ -93,6 +100,7 @@ describe("AssetUploader component", () => {
         onBaseImageLoad={jest.fn()}
         onVisemeImageLoad={jest.fn()}
         loadedVisemeCount={0}
+        loadedVisemeSlots={new Array(12).fill(false)}
       />
     );
 
