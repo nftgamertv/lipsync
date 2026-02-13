@@ -11,6 +11,14 @@ import { useWebSocket } from "@/hooks/useWebSocket";
 import { useAudioCapture } from "@/hooks/useAudioCapture";
 import { useRenderer } from "@/hooks/useRenderer";
 import { healthCheck } from "@/lib/api";
+import {
+  saveBaseImage,
+  saveVisemeImage,
+  loadBaseImage,
+  loadAllVisemeImages,
+  saveCalibration,
+  loadCalibration,
+} from "@/lib/imageStorage";
 import type { CalibrationState, SyncMode, VisemeState } from "@/types/viseme";
 import { VISEME_COUNT, VISEME_LABELS } from "@/types/viseme";
 
@@ -21,12 +29,23 @@ export default function Home() {
     "checking" | "online" | "offline"
   >("checking");
   const [activeViseme, setActiveViseme] = useState(0);
-  const [calibration, setCalibration] = useState<CalibrationState>({
-    mouthX: 0.5,
-    mouthY: 0.7,
-    mouthScale: 1.0,
-    opacity: 1.0,
-    displayScale: 1.0,
+  const [calibration, setCalibration] = useState<CalibrationState>(() => {
+    const saved = typeof window !== "undefined" ? loadCalibration() : null;
+    return saved
+      ? {
+          mouthX: saved.mouthX ?? 0.5,
+          mouthY: saved.mouthY ?? 0.7,
+          mouthScale: saved.mouthScale ?? 1.0,
+          opacity: saved.opacity ?? 1.0,
+          displayScale: saved.displayScale ?? 1.0,
+        }
+      : {
+          mouthX: 0.5,
+          mouthY: 0.7,
+          mouthScale: 1.0,
+          opacity: 1.0,
+          displayScale: 1.0,
+        };
   });
   const textRef = useRef("");
 
@@ -65,10 +84,48 @@ export default function Home() {
       .catch(() => setBackendStatus("offline"));
   }, []);
 
-  // Sync calibration to renderer
+  // Restore saved images from localStorage on mount
+  useEffect(() => {
+    (async () => {
+      const baseImg = await loadBaseImage();
+      if (baseImg) renderer.setBaseImage(baseImg);
+
+      const visemeImgs = await loadAllVisemeImages();
+      visemeImgs.forEach((img, i) => {
+        if (img) renderer.setVisemeImage(i, img);
+      });
+    })();
+  }, [renderer]);
+
+  // Sync calibration to renderer + persist
   useEffect(() => {
     renderer.updateCalibration(calibration);
+    saveCalibration(calibration);
   }, [calibration, renderer]);
+
+  // Auto-connect WebSocket when audio capture starts (e.g. user loads a file)
+  useEffect(() => {
+    if (audio.isCapturing && !isActive && backendStatus === "online") {
+      (async () => {
+        try {
+          await ws.connect();
+          ws.sendConfig(audio.sampleRate, mode, textRef.current);
+          setIsActive(true);
+        } catch {
+          console.error("Failed to auto-connect WebSocket for audio playback");
+        }
+      })();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [audio.isCapturing]);
+
+  // Re-send config when sample rate changes (e.g. switching from mic to file)
+  useEffect(() => {
+    if (isActive && ws.connected) {
+      ws.sendConfig(audio.sampleRate, mode, textRef.current);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [audio.sampleRate]);
 
   // Always run the render loop so canvas is live (tester, calibration, etc.)
   useEffect(() => {
@@ -152,6 +209,23 @@ export default function Home() {
     [handleCalibrationChange]
   );
 
+  // Wrapped image handlers that also persist to localStorage
+  const handleBaseImageLoad = useCallback(
+    (img: HTMLImageElement) => {
+      renderer.setBaseImage(img);
+      saveBaseImage(img);
+    },
+    [renderer]
+  );
+
+  const handleVisemeImageLoad = useCallback(
+    (index: number, img: HTMLImageElement) => {
+      renderer.setVisemeImage(index, img);
+      saveVisemeImage(index, img);
+    },
+    [renderer]
+  );
+
   // Handle drag-and-drop on canvas
   const handleDrop = useCallback(
     (files: FileList) => {
@@ -163,18 +237,18 @@ export default function Home() {
           const index = parseInt(match[1], 10);
           if (index >= 0 && index < VISEME_COUNT) {
             const img = new Image();
-            img.onload = () => renderer.setVisemeImage(index, img);
+            img.onload = () => handleVisemeImageLoad(index, img);
             img.src = URL.createObjectURL(file);
           }
         } else {
           // Treat as base image
           const img = new Image();
-          img.onload = () => renderer.setBaseImage(img);
+          img.onload = () => handleBaseImageLoad(img);
           img.src = URL.createObjectURL(file);
         }
       });
     },
-    [renderer]
+    [renderer, handleBaseImageLoad, handleVisemeImageLoad]
   );
 
   return (
@@ -262,8 +336,8 @@ export default function Home() {
           <hr className="border-zinc-800" />
 
           <AssetUploader
-            onBaseImageLoad={renderer.setBaseImage}
-            onVisemeImageLoad={renderer.setVisemeImage}
+            onBaseImageLoad={handleBaseImageLoad}
+            onVisemeImageLoad={handleVisemeImageLoad}
             loadedVisemeCount={renderer.getLoadedVisemeCount()}
             loadedVisemeSlots={renderer.getLoadedVisemeSlots()}
           />
