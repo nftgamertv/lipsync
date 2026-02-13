@@ -84,6 +84,8 @@ class TestAudioOnlyMode:
     def test_various_visemes(self):
         engine = SyncEngine(mode="audio_only")
         for viseme_idx in range(12):
+            # Advance past min hold time so each transition is accepted
+            engine.last_transition_time = 0
             result = engine.update_audio(self._make_audio_result(
                 energy=0.5, viseme=viseme_idx, silent=False
             ))
