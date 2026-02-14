@@ -114,6 +114,7 @@ export function useAudioCapture(options: UseAudioCaptureOptions = {}) {
 
       const ctx = new AudioContext();
       audioContextRef.current = ctx;
+      if (ctx.state === "suspended") await ctx.resume();
 
       const source = ctx.createMediaStreamSource(stream);
       setupProcessing(ctx, source);
@@ -130,8 +131,12 @@ export function useAudioCapture(options: UseAudioCaptureOptions = {}) {
       const ctx = new AudioContext();
       audioContextRef.current = ctx;
 
+      // Ensure AudioContext is active (browsers suspend until user gesture)
+      if (ctx.state === "suspended") {
+        await ctx.resume();
+      }
+
       const audioEl = new Audio();
-      audioEl.crossOrigin = "anonymous";
       audioEl.src = URL.createObjectURL(file);
       audioEl.loop = false;
       audioElementRef.current = audioEl;
@@ -171,6 +176,7 @@ export function useAudioCapture(options: UseAudioCaptureOptions = {}) {
 
     const ctx = new AudioContext();
     audioContextRef.current = ctx;
+    if (ctx.state === "suspended") await ctx.resume();
 
     const source = ctx.createMediaStreamSource(stream);
     setupProcessing(ctx, source);

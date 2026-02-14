@@ -65,7 +65,9 @@ class SyncEngine:
 
         # Timing
         self.last_update = time.time()
-        self.transition_ms = 50.0  # ms for lerp between visemes
+        self.transition_ms = 120.0  # ms for lerp between visemes
+        self.min_hold_ms = 80.0  # minimum time a viseme stays before switching
+        self.last_transition_time = 0.0  # when we last changed target viseme
 
         # Audio state
         self.last_audio_viseme = 0
@@ -139,13 +141,20 @@ class SyncEngine:
         return self.state.to_dict()
 
     def _transition_to(self, target: int, now: float):
-        """Start a transition to a new target viseme."""
+        """Start a transition to a new target viseme, respecting minimum hold time."""
         target = max(0, min(VISEME_COUNT - 1, target))
         if target != self.state.target_viseme:
+            # Always allow returning to Neutral (silence); hold time only
+            # applies to switching between active mouth shapes
+            if target != 0:
+                elapsed_since_last = (now - self.last_transition_time) * 1000
+                if elapsed_since_last < self.min_hold_ms:
+                    return
             self.state.current_viseme = self.state.target_viseme
             self.state.target_viseme = target
             self.state.blend_factor = 0.0
             self.state.transition_start = now
+            self.last_transition_time = now
 
     def _update_blend(self, now: float):
         """Update the blend factor for smooth transitions."""
@@ -188,3 +197,4 @@ class SyncEngine:
         self.queue_elapsed = 0.0
         self.last_audio_viseme = 0
         self.last_audio_energy = 0.0
+        self.last_transition_time = 0.0

@@ -20,7 +20,7 @@ class AudioProcessor:
 
         # Smoothing state
         self.smoothed_energy = 0.0
-        self.alpha = 0.7  # EMA smoothing factor
+        self.alpha = 0.4  # EMA smoothing factor (lower = smoother, less twitchy)
 
         # Peak detection state
         self.peak_threshold = 0.08
