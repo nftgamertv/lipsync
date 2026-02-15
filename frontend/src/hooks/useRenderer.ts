@@ -15,6 +15,8 @@ export function useRenderer(options: UseRendererOptions = {}) {
   const animFrameRef = useRef<number>(0);
   const [fps, setFps] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
+  // Bumped on every image set to force parent re-render so counts update
+  const [imageVersion, setImageVersion] = useState(0);
 
   // Image state
   const baseImageRef = useRef<HTMLImageElement | null>(null);
@@ -42,11 +44,13 @@ export function useRenderer(options: UseRendererOptions = {}) {
 
   const setBaseImage = useCallback((img: HTMLImageElement) => {
     baseImageRef.current = img;
+    setImageVersion((v) => v + 1);
   }, []);
 
   const setVisemeImage = useCallback((index: number, img: HTMLImageElement) => {
     if (index >= 0 && index < VISEME_COUNT) {
       visemeImagesRef.current[index] = img;
+      setImageVersion((v) => v + 1);
     }
   }, []);
 
@@ -184,12 +188,16 @@ export function useRenderer(options: UseRendererOptions = {}) {
     };
   }, []);
 
+  const hasBaseImage = baseImageRef.current !== null;
+
   return {
     canvasRef,
     fps,
     isRunning,
     canvasWidth: width,
     canvasHeight: height,
+    imageVersion,
+    hasBaseImage,
     setBaseImage,
     setVisemeImage,
     getLoadedVisemeCount,

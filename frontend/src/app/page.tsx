@@ -2,11 +2,12 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import AudioInput from "@/components/AudioInput";
-import AssetUploader from "@/components/AssetUploader";
+import VisemePanel from "@/components/VisemePanel";
 import CalibrationPanel from "@/components/CalibrationPanel";
-import VisemeTester from "@/components/VisemeTester";
 import TextInput from "@/components/TextInput";
 import Canvas from "@/components/Canvas";
+import DebugPanel from "@/components/DebugPanel";
+import type { VisemeLogEntry } from "@/components/DebugPanel";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import { useAudioCapture } from "@/hooks/useAudioCapture";
 import { useRenderer } from "@/hooks/useRenderer";
@@ -21,6 +22,8 @@ import {
 } from "@/lib/imageStorage";
 import type { CalibrationState, SyncMode, VisemeState } from "@/types/viseme";
 import { VISEME_COUNT, VISEME_LABELS } from "@/types/viseme";
+
+const MAX_LOG_ENTRIES = 200;
 
 export default function Home() {
   const [mode, setMode] = useState<SyncMode>("hybrid");
@@ -48,6 +51,11 @@ export default function Home() {
         };
   });
   const textRef = useRef("");
+  const [inputText, setInputText] = useState("");
+
+  // Debug state
+  const [lastVisemeState, setLastVisemeState] = useState<VisemeState | null>(null);
+  const [eventLog, setEventLog] = useState<VisemeLogEntry[]>([]);
 
   // Renderer
   const renderer = useRenderer({ width: 1920, height: 1080 });
@@ -56,6 +64,12 @@ export default function Home() {
   const handleViseme = useCallback(
     (state: VisemeState) => {
       setActiveViseme(state.target_viseme);
+      setLastVisemeState(state);
+      setEventLog((prev) => {
+        const entry: VisemeLogEntry = { ts: performance.now(), state };
+        const next = [...prev, entry];
+        return next.length > MAX_LOG_ENTRIES ? next.slice(-MAX_LOG_ENTRIES) : next;
+      });
       renderer.updateViseme(
         state.target_viseme,
         state.blend_factor,
@@ -95,7 +109,8 @@ export default function Home() {
         if (img) renderer.setVisemeImage(i, img);
       });
     })();
-  }, [renderer]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Sync calibration to renderer + persist
   useEffect(() => {
@@ -177,6 +192,7 @@ export default function Home() {
   const handleTextSubmit = useCallback(
     (text: string) => {
       textRef.current = text;
+      setInputText(text);
       if (isActive) {
         ws.sendText(text);
       }
@@ -248,7 +264,7 @@ export default function Home() {
         }
       });
     },
-    [renderer, handleBaseImageLoad, handleVisemeImageLoad]
+    [handleBaseImageLoad, handleVisemeImageLoad]
   );
 
   return (
@@ -319,9 +335,9 @@ export default function Home() {
       </header>
 
       {/* Main content */}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 min-h-0">
         {/* Sidebar */}
-        <aside className="w-72 bg-zinc-900 border-r border-zinc-800 overflow-y-auto p-3 space-y-4">
+        <aside className="w-72 bg-zinc-900 border-r border-zinc-800 overflow-y-auto p-3 space-y-4 shrink-0">
           <AudioInput
             devices={audio.devices}
             activeSource={audio.activeSource}
@@ -335,11 +351,14 @@ export default function Home() {
 
           <hr className="border-zinc-800" />
 
-          <AssetUploader
+          <VisemePanel
             onBaseImageLoad={handleBaseImageLoad}
             onVisemeImageLoad={handleVisemeImageLoad}
+            activeViseme={activeViseme}
+            onTestViseme={handleTestViseme}
             loadedVisemeCount={renderer.getLoadedVisemeCount()}
             loadedVisemeSlots={renderer.getLoadedVisemeSlots()}
+            hasBaseImage={renderer.hasBaseImage}
           />
 
           <hr className="border-zinc-800" />
@@ -351,25 +370,32 @@ export default function Home() {
 
           <hr className="border-zinc-800" />
 
-          <VisemeTester
-            activeViseme={activeViseme}
-            onTestViseme={handleTestViseme}
-          />
-
-          <hr className="border-zinc-800" />
-
           <TextInput onTextSubmit={handleTextSubmit} />
         </aside>
 
-        {/* Canvas */}
-        <Canvas
-          canvasRef={renderer.canvasRef}
-          width={renderer.canvasWidth}
-          height={renderer.canvasHeight}
-          fps={renderer.fps}
-          onCanvasClick={handleCanvasClick}
-          onDrop={handleDrop}
-        />
+        {/* Right: Canvas + Debug Panel */}
+        <div className="flex-1 flex flex-col min-w-0">
+          <Canvas
+            canvasRef={renderer.canvasRef}
+            width={renderer.canvasWidth}
+            height={renderer.canvasHeight}
+            fps={renderer.fps}
+            onCanvasClick={handleCanvasClick}
+            onDrop={handleDrop}
+          />
+
+          <DebugPanel
+            lastState={lastVisemeState}
+            eventLog={eventLog}
+            inputText={inputText}
+            sampleRate={audio.sampleRate}
+            isActive={isActive}
+            wsConnected={ws.connected}
+            mode={mode}
+            fps={renderer.fps}
+            activeSource={audio.activeSource}
+          />
+        </div>
       </div>
     </div>
   );
