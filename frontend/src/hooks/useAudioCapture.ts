@@ -22,7 +22,7 @@ export function useAudioCapture(options: UseAudioCaptureOptions = {}) {
 
   const audioContextRef = useRef<AudioContext | null>(null);
   const sourceNodeRef = useRef<MediaStreamAudioSourceNode | MediaElementAudioSourceNode | null>(null);
-  const processorRef = useRef<ScriptProcessorNode | null>(null);
+  const workletNodeRef = useRef<AudioWorkletNode | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const audioElementRef = useRef<HTMLAudioElement | null>(null);
   const onChunkRef = useRef(onAudioChunk);
@@ -50,9 +50,9 @@ export function useAudioCapture(options: UseAudioCaptureOptions = {}) {
 
   // Stop any active capture
   const stopCapture = useCallback(() => {
-    if (processorRef.current) {
-      processorRef.current.disconnect();
-      processorRef.current = null;
+    if (workletNodeRef.current) {
+      workletNodeRef.current.disconnect();
+      workletNodeRef.current = null;
     }
     if (sourceNodeRef.current) {
       sourceNodeRef.current.disconnect();
@@ -75,23 +75,25 @@ export function useAudioCapture(options: UseAudioCaptureOptions = {}) {
     setActiveSource(null);
   }, []);
 
-  // Set up audio processing pipeline
+  // Set up audio processing pipeline using AudioWorkletNode
   const setupProcessing = useCallback(
-    (ctx: AudioContext, source: MediaStreamAudioSourceNode | MediaElementAudioSourceNode) => {
-      // Use ScriptProcessorNode for broad compatibility
-      // (AudioWorklet would be better but adds complexity for cross-browser)
-      const processor = ctx.createScriptProcessor(chunkSize, 1, 1);
-      processor.onaudioprocess = (e) => {
-        const inputData = e.inputBuffer.getChannelData(0);
-        const chunk = new Float32Array(inputData);
+    async (ctx: AudioContext, source: MediaStreamAudioSourceNode | MediaElementAudioSourceNode) => {
+      await ctx.audioWorklet.addModule("/audio-chunk-processor.js");
+
+      const workletNode = new AudioWorkletNode(ctx, "audio-chunk-processor", {
+        processorOptions: { chunkSize },
+      });
+
+      workletNode.port.onmessage = (e: MessageEvent) => {
+        const chunk = e.data.chunk as Float32Array;
         onChunkRef.current?.(chunk);
       };
 
-      source.connect(processor);
-      processor.connect(ctx.destination);
+      source.connect(workletNode);
+      workletNode.connect(ctx.destination);
 
       sourceNodeRef.current = source;
-      processorRef.current = processor;
+      workletNodeRef.current = workletNode;
       setSampleRate(ctx.sampleRate);
       setIsCapturing(true);
     },
@@ -117,7 +119,7 @@ export function useAudioCapture(options: UseAudioCaptureOptions = {}) {
       if (ctx.state === "suspended") await ctx.resume();
 
       const source = ctx.createMediaStreamSource(stream);
-      setupProcessing(ctx, source);
+      await setupProcessing(ctx, source);
       setActiveSource("microphone");
     },
     [stopCapture, setupProcessing]
@@ -142,7 +144,7 @@ export function useAudioCapture(options: UseAudioCaptureOptions = {}) {
       audioElementRef.current = audioEl;
 
       const source = ctx.createMediaElementSource(audioEl);
-      setupProcessing(ctx, source);
+      await setupProcessing(ctx, source);
       setActiveSource("file");
 
       audioEl.onended = () => {
@@ -158,28 +160,27 @@ export function useAudioCapture(options: UseAudioCaptureOptions = {}) {
   const startBrowserAudio = useCallback(async () => {
     stopCapture();
 
-    // getDisplayMedia with audio captures tab/system audio
+    // getDisplayMedia requires video; we request both then discard video
     const stream = await navigator.mediaDevices.getDisplayMedia({
       audio: true,
-      video: false, // We only want audio
+      video: true,
     });
+
+    // Immediately stop video tracks — we only need audio
+    stream.getVideoTracks().forEach((t) => t.stop());
     streamRef.current = stream;
 
-    // Check if we actually got audio tracks
     if (stream.getAudioTracks().length === 0) {
       stream.getTracks().forEach((t) => t.stop());
-      throw new Error("No audio track captured. Make sure to select a tab with audio.");
+      throw new Error("No audio track captured. Make sure to share a tab with audio enabled.");
     }
-
-    // Stop video tracks if any were added
-    stream.getVideoTracks().forEach((t) => t.stop());
 
     const ctx = new AudioContext();
     audioContextRef.current = ctx;
     if (ctx.state === "suspended") await ctx.resume();
 
     const source = ctx.createMediaStreamSource(stream);
-    setupProcessing(ctx, source);
+    await setupProcessing(ctx, source);
     setActiveSource("browser");
   }, [stopCapture, setupProcessing]);
 
