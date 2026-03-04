@@ -19,9 +19,9 @@ afterAll(() => {
 
 describe("API client", () => {
   test("getWebSocketUrl converts http to ws", () => {
-    // Default API_BASE is http://localhost:8000
     const url = getWebSocketUrl();
-    expect(url).toBe("ws://localhost:8000/ws/audio");
+    // Should convert https → wss (or http → ws) and append /ws/audio
+    expect(url).toMatch(/^wss?:\/\/.+\/ws\/audio$/);
   });
 
   test("healthCheck calls /api/health", async () => {

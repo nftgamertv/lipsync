@@ -94,3 +94,29 @@ export function clearAllImages(): void {
     localStorage.removeItem(`${KEY_VISEME_PREFIX}${i}`);
   }
 }
+
+/**
+ * Load bundled viseme images from /visemes/ directory.
+ * Used as fallback when no images are saved in localStorage.
+ */
+export async function loadBundledVisemeImages(): Promise<(HTMLImageElement | null)[]> {
+  const results: (HTMLImageElement | null)[] = [];
+  for (let i = 0; i < 12; i++) {
+    try {
+      const img = await loadFromUrl(`/visemes/viseme${i}.png`);
+      results.push(img);
+    } catch {
+      results.push(null);
+    }
+  }
+  return results;
+}
+
+function loadFromUrl(url: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = url;
+  });
+}

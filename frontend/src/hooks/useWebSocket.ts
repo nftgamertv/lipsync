@@ -15,6 +15,7 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
   const [connected, setConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const reconnectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const intentionalCloseRef = useRef(false);
   const onVisemeRef = useRef(onViseme);
   onVisemeRef.current = onViseme;
 
@@ -22,6 +23,8 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       return Promise.resolve();
     }
+
+    intentionalCloseRef.current = false;
 
     return new Promise((resolve, reject) => {
       try {
@@ -49,7 +52,7 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
         ws.onclose = () => {
           setConnected(false);
           wsRef.current = null;
-          if (autoReconnect) {
+          if (autoReconnect && !intentionalCloseRef.current) {
             reconnectTimer.current = setTimeout(connect, 2000);
           }
         };
@@ -67,6 +70,7 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
   }, [autoReconnect]);
 
   const disconnect = useCallback(() => {
+    intentionalCloseRef.current = true;
     if (reconnectTimer.current) {
       clearTimeout(reconnectTimer.current);
       reconnectTimer.current = null;
