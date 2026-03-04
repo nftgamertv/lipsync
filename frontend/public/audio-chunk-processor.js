@@ -6,11 +6,21 @@ class AudioChunkProcessor extends AudioWorkletProcessor {
     this.offset = 0;
   }
 
-  process(inputs) {
+  process(inputs, outputs) {
     const input = inputs[0];
     if (!input || input.length === 0) return true;
 
     const channel = input[0];
+
+    // Pass audio through to output so file playback is audible
+    const output = outputs[0];
+    if (output && output.length > 0) {
+      for (let ch = 0; ch < output.length; ch++) {
+        const src = input[ch] || channel;
+        output[ch].set(src);
+      }
+    }
+
     let i = 0;
     while (i < channel.length) {
       const remaining = this.bufferSize - this.offset;

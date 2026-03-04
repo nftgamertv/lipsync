@@ -17,6 +17,7 @@ import {
   saveVisemeImage,
   loadBaseImage,
   loadAllVisemeImages,
+  loadBundledVisemeImages,
   saveCalibration,
   loadCalibration,
 } from "@/lib/imageStorage";
@@ -101,16 +102,29 @@ export default function Home() {
     }
   }, []);
 
-  // Restore saved images from localStorage on mount
+  // Restore saved images from localStorage on mount, fall back to bundled images
   useEffect(() => {
     (async () => {
       const baseImg = await loadBaseImage();
       if (baseImg) renderer.setBaseImage(baseImg);
 
       const visemeImgs = await loadAllVisemeImages();
-      visemeImgs.forEach((img, i) => {
-        if (img) renderer.setVisemeImage(i, img);
-      });
+      const hasAnyViseme = visemeImgs.some((img) => img !== null);
+
+      if (hasAnyViseme) {
+        visemeImgs.forEach((img, i) => {
+          if (img) renderer.setVisemeImage(i, img);
+        });
+      } else {
+        // No saved visemes — load bundled defaults from /visemes/
+        const bundled = await loadBundledVisemeImages();
+        bundled.forEach((img, i) => {
+          if (img) {
+            renderer.setVisemeImage(i, img);
+            saveVisemeImage(i, img);
+          }
+        });
+      }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
