@@ -9,8 +9,14 @@ frontend/out/
 backend/venv/
 backend/__pycache__/
 backend/tests/__pycache__/
+__pycache__/
+*.py[cod]
 *.pyc
+*.egg-info/
+dist/
+build/
 .pytest_cache/
+venv/
 
 # Env files
 .env.local
@@ -19,6 +25,12 @@ backend/tests/__pycache__/
 # IDE
 .vscode/
 .idea/
+*.swp
+*.swo
+*~
 
 # OS
 .DS_Store
+
+# Output
+nohup.out
