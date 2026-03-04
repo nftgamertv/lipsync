@@ -65,8 +65,8 @@ class SyncEngine:
 
         # Timing
         self.last_update = time.time()
-        self.transition_ms = 120.0  # ms for lerp between visemes
-        self.min_hold_ms = 80.0  # minimum time a viseme stays before switching
+        self.transition_ms = 80.0  # ms for lerp between visemes
+        self.min_hold_ms = 40.0  # minimum time a viseme stays before switching
         self.last_transition_time = 0.0  # when we last changed target viseme
 
         # Audio state

@@ -46,6 +46,8 @@ export default function Home() {
   // Debug state
   const [lastVisemeState, setLastVisemeState] = useState<VisemeState | null>(null);
   const [eventLog, setEventLog] = useState<VisemeLogEntry[]>([]);
+  const chunkCountRef = useRef(0);
+  const [chunkCount, setChunkCount] = useState(0);
 
   // Renderer
   const renderer = useRenderer({ width: 1920, height: 1080 });
@@ -71,12 +73,21 @@ export default function Home() {
 
   const ws = useWebSocket({ onViseme: handleViseme });
 
-  // Audio capture
+  // Audio capture — use a ref for ws.sendAudioChunk to avoid re-creating
+  // the callback on every render (ws is a new object each render)
+  const sendAudioChunkRef = useRef(ws.sendAudioChunk);
+  sendAudioChunkRef.current = ws.sendAudioChunk;
+
   const handleAudioChunk = useCallback(
     (data: Float32Array) => {
-      ws.sendAudioChunk(data.buffer as ArrayBuffer);
+      sendAudioChunkRef.current(data.buffer as ArrayBuffer);
+      chunkCountRef.current++;
+      // Update displayed count every 10 chunks to avoid excessive re-renders
+      if (chunkCountRef.current % 10 === 0) {
+        setChunkCount(chunkCountRef.current);
+      }
     },
-    [ws]
+    []
   );
 
   const audio = useAudioCapture({ onAudioChunk: handleAudioChunk });
@@ -160,12 +171,18 @@ export default function Home() {
   }, [audio.sampleRate]);
 
   // Always run the render loop so canvas is live (tester, calibration, etc.)
+  // Use stable refs to avoid restarting the loop on every render
+  const startRenderLoopRef = useRef(renderer.startRenderLoop);
+  const stopRenderLoopRef = useRef(renderer.stopRenderLoop);
+  startRenderLoopRef.current = renderer.startRenderLoop;
+  stopRenderLoopRef.current = renderer.stopRenderLoop;
+
   useEffect(() => {
-    renderer.startRenderLoop();
+    startRenderLoopRef.current();
     return () => {
-      renderer.stopRenderLoop();
+      stopRenderLoopRef.current();
     };
-  }, [renderer]);
+  }, []);
 
   // Start/Stop controls audio + WebSocket only, NOT the render loop
   const handleToggle = useCallback(async () => {
@@ -175,6 +192,8 @@ export default function Home() {
       ws.sendReset();
       ws.disconnect();
       setIsActive(false);
+      chunkCountRef.current = 0;
+      setChunkCount(0);
     } else {
       // Start: connect WebSocket, send config, then start audio if not already capturing
       try {
@@ -411,6 +430,7 @@ export default function Home() {
             mode={mode}
             fps={renderer.fps}
             activeSource={audio.activeSource}
+            chunkCount={chunkCount}
           />
         </div>
       </div>

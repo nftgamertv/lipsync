@@ -34,6 +34,7 @@ interface DebugPanelProps {
   mode: SyncMode;
   fps: number;
   activeSource: AudioSourceType | null;
+  chunkCount?: number;
 }
 
 function Bar({ value, max = 1, color = "bg-indigo-500" }: { value: number; max?: number; color?: string }) {
@@ -62,6 +63,7 @@ export default function DebugPanel({
   mode,
   fps,
   activeSource,
+  chunkCount = 0,
 }: DebugPanelProps) {
   const logEndRef = useRef<HTMLDivElement>(null);
 
@@ -102,6 +104,10 @@ export default function DebugPanel({
               <span className="text-zinc-500">State</span>
               <span className={isActive ? "text-green-400" : "text-zinc-500"}>
                 {isActive ? "active" : "stopped"}
+              </span>
+              <span className="text-zinc-500">Chunks</span>
+              <span className={chunkCount > 0 ? "text-green-400" : "text-zinc-500"}>
+                {chunkCount}
               </span>
             </div>
           </div>

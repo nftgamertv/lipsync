@@ -103,7 +103,7 @@ export function useRenderer(options: UseRendererOptions = {}) {
     // Apply opacity
     ctx.globalAlpha = cal.opacity;
 
-    // Draw base face
+    // Draw base face (or placeholder if none loaded)
     if (baseImageRef.current) {
       const base = baseImageRef.current;
       // Scale base to fill canvas while maintaining aspect ratio
@@ -116,6 +116,35 @@ export function useRenderer(options: UseRendererOptions = {}) {
       const bx = (canvas.width - bw) / 2;
       const by = (canvas.height - bh) / 2;
       ctx.drawImage(base, bx, by, bw, bh);
+    } else {
+      // Draw a placeholder face so mouth overlays are visible
+      const cx2 = canvas.width / 2;
+      const cy2 = canvas.height / 2 - 30;
+      const r = Math.min(canvas.width, canvas.height) * 0.35;
+
+      // Head circle
+      ctx.fillStyle = "#4a90d9";
+      ctx.beginPath();
+      ctx.ellipse(cx2, cy2, r, r * 1.1, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Eyes
+      ctx.fillStyle = "#fff";
+      const eyeY = cy2 - r * 0.15;
+      const eyeSpacing = r * 0.35;
+      const eyeR = r * 0.12;
+      ctx.beginPath();
+      ctx.arc(cx2 - eyeSpacing, eyeY, eyeR, 0, Math.PI * 2);
+      ctx.arc(cx2 + eyeSpacing, eyeY, eyeR, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Pupils
+      ctx.fillStyle = "#1a1a2e";
+      const pupilR = eyeR * 0.55;
+      ctx.beginPath();
+      ctx.arc(cx2 - eyeSpacing, eyeY, pupilR, 0, Math.PI * 2);
+      ctx.arc(cx2 + eyeSpacing, eyeY, pupilR, 0, Math.PI * 2);
+      ctx.fill();
     }
 
     // Draw mouth overlay (blended visemes)
