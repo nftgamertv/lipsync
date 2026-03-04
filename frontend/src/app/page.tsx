@@ -32,23 +32,12 @@ export default function Home() {
     "checking" | "online" | "offline"
   >("checking");
   const [activeViseme, setActiveViseme] = useState(0);
-  const [calibration, setCalibration] = useState<CalibrationState>(() => {
-    const saved = typeof window !== "undefined" ? loadCalibration() : null;
-    return saved
-      ? {
-          mouthX: saved.mouthX ?? 0.5,
-          mouthY: saved.mouthY ?? 0.7,
-          mouthScale: saved.mouthScale ?? 1.0,
-          opacity: saved.opacity ?? 1.0,
-          displayScale: saved.displayScale ?? 1.0,
-        }
-      : {
-          mouthX: 0.5,
-          mouthY: 0.7,
-          mouthScale: 1.0,
-          opacity: 1.0,
-          displayScale: 1.0,
-        };
+  const [calibration, setCalibration] = useState<CalibrationState>({
+    mouthX: 0.5,
+    mouthY: 0.7,
+    mouthScale: 1.0,
+    opacity: 1.0,
+    displayScale: 1.0,
   });
   const textRef = useRef("");
   const [inputText, setInputText] = useState("");
@@ -96,6 +85,20 @@ export default function Home() {
     healthCheck()
       .then(() => setBackendStatus("online"))
       .catch(() => setBackendStatus("offline"));
+  }, []);
+
+  // Restore saved calibration from localStorage on mount (after hydration)
+  useEffect(() => {
+    const saved = loadCalibration();
+    if (saved) {
+      setCalibration({
+        mouthX: saved.mouthX ?? 0.5,
+        mouthY: saved.mouthY ?? 0.7,
+        mouthScale: saved.mouthScale ?? 1.0,
+        opacity: saved.opacity ?? 1.0,
+        displayScale: saved.displayScale ?? 1.0,
+      });
+    }
   }, []);
 
   // Restore saved images from localStorage on mount

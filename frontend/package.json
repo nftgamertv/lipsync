@@ -3,13 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+     "kill":"taskkill /F /IM node.exe /T",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
     "test": "jest"
   },
-  "dependencies": {
+  "dependencies": {   
     "next": "16.1.6",
     "react": "19.2.3",
     "react-dom": "19.2.3"
